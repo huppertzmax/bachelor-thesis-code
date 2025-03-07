@@ -8,11 +8,13 @@ This is an extension of the repository [Kernel-InfoNCE](https://github.com/yifan
 
 Run `pip install -r requirements.txt` to install all necessary packages. Notice that a cuda 12 environment is needed for some of the scripts, and generally cuda is recommend to boost the performance.
 
+
+
 ## Preparation for Reproduction
-Generally have a look at all scripts for the available argument options, the default arguments are used in all experiments.
+Generally have a look at all scripts for the available argument options, the default arguments are used in all experiments of the thesis.
 
 ### 1. Dataset and Similarity graph creation
-Before starting to run models the dataset and the matching similarity graph(s) have to be created. 
+Before starting to train models, the dataset and the matching similarity graph(s) have to be created. 
 
 To create the custom pre-computed dataset with the augmented views, which is used for the training and the embedding calculation run the following command in the `dataset` folder: 
 
@@ -33,14 +35,14 @@ python similarity_graph_generator.py --block_type="aug_group"
 ```
 for a augmentation-group similarity graph. 
 
-The adjacency matrices and normalized adjacency matrix of the graphs will be stored under `matrices/generated/`.
+The adjacency matrix and normalized adjacency matrix of the graph will be stored under `matrices/generated/`.
 
 ### 2. Model training and embedding computation
 Generally wandb is used for logging all runs, therefore create a wandb account and login as described [here](https://docs.wandb.ai/quickstart/).
 
 There exists two options for the training process: 
 
-1) Run the `tiny_train.py` (pre-training), `tiny_evaluation.py` (linear evaluation) and `embeddings.py` script individually 
+1) Run the `tiny_train.py` (pre-training), `tiny_evaluation.py` (linear evaluation) and `embeddings.py` (embedding computation) scripts individually 
 2) **Recommended**: Run the `tiny_full_train.py` script to automatically run the pre-training, evaluation and embedding computation. 
 
 Have a look at the script for the concrete argument options, as an example a SimCLR model (with the NT_Xent loss) can be trained by running: 
@@ -60,20 +62,18 @@ To compute the eigenvector matrix for the computed normalized adjacency matrix o
 ```shell 
 python eigenvector.py
 ```
-This stores the eigenvector matrix for the similarity graph under the storage path of the graph. 
-
+This stores the eigenvector matrix for the similarity graph under the storage path of the graph.
 
 ## Reproduce the experiment results 
 
-Generally for all files you need to define the input names, paths and the path suffix. 
+Generally for all files you need to define the input names, paths and the path suffix. Both name and suffix are used for identification, we recommend e.g. `--path_suffix="rq-nt` when comparing a model trained with the RQMin loss and a model trained with the NT-Xent loss. 
 
 ### 1. Ridge regression 
-Ridge regression is used to calculate a transformation matrix between to embedding matrices (or eigenvector matrices) and can be run by: 
+Ridge regression is used to calculate a transformation matrix between two embedding matrices (or eigenvector matrix) and can be run by: 
 
 ```shell 
 python ridge_regression.py --matrix1_name="<...>" --matrix2_name="<...>" --matrix1_path="<...>" --matrix2_path="<...>" --path_suffix="<...>"
 ```
-Both name and suffix are used for identification, we recommend e.g. `--path_suffix="rq-nt` when comparing a model trained with the RQMin loss and a model trained with the NT-Xent loss. 
 
 The computed transformation matrix and the run configuration are stored under: `results/ridge-regression/<timestamp>-matrices_<path_suffix>`.
 
@@ -109,12 +109,12 @@ To compute the CKA similarity between the embeddings or eigenvector matrices run
 ```shell
 python cka_matrices.py  --matrix1_name="<...>" --matrix2_name="<...>" --matrix1_path="<...>" --matrix2_path="<...>" --path_suffix="<...>"
 ```
-given the matrices. The results are stored under: `results/cka/<timestamp>_cka-matrices_<path_suffix>`
+given the embedding (or eigenvector) matrices. The results are stored under: `results/cka/<timestamp>_cka-matrices_<path_suffix>`
 
 
 ### 4. t-SNE visualization 
 
-To visualize a subset of the embeddings or the eigenvector matrix with t-SNE run: 
+To visualize a seeded subset of the embeddings or the eigenvector matrix with t-SNE run: 
 
 ```shell
 python tsne.py  --matrix_name="<...>" --matrix_path="<...>" --path_suffix="<...>"
@@ -129,10 +129,10 @@ The t-SNE results and a visualization is stored under: `results/tsne/<timestamp>
 To reproduce the bootstrapping results simply run the `distance_measures.py` script with the additional argument `--bootstrapping_iterations=1`. 
 
 ### 2. Constraints of RQMin loss 
-You can disable individual constraints when running with `--constrained_rqmin` by adding `--orthogonal_constrained` (disables orthogonality constraint) or `--centering_constrained` (disables centering constraint)
+You can disable individual constraints when running the training with option `--constrained_rqmin` by adding `--orthogonal_constrained` (disables orthogonality constraint) or `--centering_constrained` (disables centering constraint)
 
 ### 3. Constraining other losses 
-Simply run the shell script `./configs/training_all_losses_constrained.sh`, which trains all models with constraints. 
+Simply run the shell script `./configs/training_all_losses_constrained.sh`, which trains models for all losses (except RQMin) with constraints. 
 
 ### 4. Regularization term of LGMin loss 
 Again simply run the shell script `./configs/training_lgmin_appendix.sh`, which trains all shown parameter variations. 
@@ -141,4 +141,4 @@ Again simply run the shell script `./configs/training_lgmin_appendix.sh`, which 
 The model can be optimized with the experimental loss by running `python tiny_full_train.py --loss_type="experimental_trace"`
 
 ### 6. Overlap spectral decomposition   
-You can create similarity graphs with overlap by running `python matrices/overlap_matrix_generator.py`, have a look at the arguments.  
+You can create similarity graphs with overlap by running `python matrices/overlap_matrix_generator.py`, have a look at the arguments to define the SSL-based construction as well as the ratio and density.
